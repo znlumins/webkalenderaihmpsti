@@ -142,7 +142,7 @@ export default function Home() {
             {/* Logo & Judul */}
             <div>
               <h1 className="text-lg md:text-2xl font-extrabold flex items-center gap-2">
-                  CANVAS PROGRAM KERJA HMPSTI 
+                  KALENDER PROKER HMPSTI
                   {session && (
                       <span className={`text-[10px] text-white px-2 py-0.5 rounded-full hidden md:inline-block ${isSuperAdmin ? 'bg-black' : 'bg-blue-600'}`}>
                          {isSuperAdmin ? "SUPER ADMIN" : `ADMIN ${PILLARS.find(p => p.id === myDeptId)?.name || ''}`}
