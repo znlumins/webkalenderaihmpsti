@@ -13,7 +13,7 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "kalender timelini hmpsti",
+  title: "kalender timeline hmpsti",
   description: "Aplikasi kalender kegiatan HMPSTI UB",
 };
 
