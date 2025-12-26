@@ -1,19 +1,32 @@
-import { format } from "date-fns-tz";
+// PERUBAHAN IMPORT: Gunakan toZonedTime dan fromZonedTime
+import { format, toZonedTime, fromZonedTime } from "date-fns-tz";
 import { id } from "date-fns/locale";
 import { parseISO } from "date-fns";
 
-// KITA PAKSA SEMUA JADI WIB (Asia/Jakarta)
 const TIMEZONE = "Asia/Jakarta";
 
-// 1. Format Tanggal untuk Tampilan (Detail Modal, Focus Mode)
-// Contoh: "Senin, 25 Oktober • 10.00 WIB"
+// 1. UNTUK MENAMPILKAN (Database -> Layar)
 export const formatToWIB = (date: Date | string | number, pattern: string) => {
   const d = typeof date === 'string' ? parseISO(date) : date;
-  return format(d, pattern, { timeZone: TIMEZONE, locale: id });
+  
+  // GANTI utcToZonedTime JADI toZonedTime
+  const zonedDate = toZonedTime(d, TIMEZONE);
+  
+  return format(zonedDate, pattern, { timeZone: TIMEZONE, locale: id });
 };
 
-// 2. Format untuk Input Form (saat tambah event)
-// Format HTML datetime-local butuh: "YYYY-MM-DDTHH:mm"
+// 2. UNTUK INPUT FORM (Default Value)
 export const formatForInput = (date: Date) => {
-  return format(date, "yyyy-MM-dd'T'HH:mm", { timeZone: TIMEZONE });
+  // GANTI utcToZonedTime JADI toZonedTime
+  const zonedDate = toZonedTime(date, TIMEZONE);
+  
+  return format(zonedDate, "yyyy-MM-dd'T'HH:mm", { timeZone: TIMEZONE });
+};
+
+// 3. UNTUK MENYIMPAN (Layar -> Database)
+export const parseInputToUTC = (dateString: string) => {
+  if (!dateString) return new Date();
+  
+  // GANTI zonedTimeToUtc JADI fromZonedTime
+  return fromZonedTime(dateString, TIMEZONE);
 };
