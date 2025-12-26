@@ -1,8 +1,8 @@
 import { useState } from "react";
 import { X, Users, Briefcase, FileText, Copy, Sparkles, Trash2 } from "lucide-react";
-import { format, parseISO } from "date-fns";
-import { id } from "date-fns/locale";
-import { EventData, UserProfile } from "../../lib/types"; // Perhatikan path relative
+import { parseISO } from "date-fns";
+import { formatToWIB } from "../../lib/dateHelper"; // <--- IMPORT HELPER
+import { EventData, UserProfile } from "../../lib/types";
 import { PILLARS } from "../../lib/constants";
 import { EventService } from "../../services/EventService";
 
@@ -17,12 +17,12 @@ export default function DetailModal({ event, onClose, onDeleteSuccess, userProfi
     const [activeTab, setActiveTab] = useState<'info' | 'tim' | 'logistik' | 'file'>('info');
     const [isAiLoading, setIsAiLoading] = useState(false);
     
-    // Safety Check: Data Proker (cegah crash jika null)
+    // Safety Check Data
     const prokerName = event.prokers?.name || "Kegiatan Umum";
     const deptId = event.prokers?.department_id;
     const pillarColor = PILLARS.find(p => p.id === deptId)?.color || '#333';
 
-    // Permission Check
+    // Permissions
     const isSuperAdmin = userProfile?.role === 'super_admin';
     const myDeptId = userProfile?.department_id;
     const canEdit = isSuperAdmin || (deptId !== undefined && deptId === myDeptId);
@@ -39,7 +39,8 @@ export default function DetailModal({ event, onClose, onDeleteSuccess, userProfi
     };
 
     const copyManual = () => {
-        const text = `📢 *INFO KEGIATAN*\nProker: ${prokerName}\n📅 ${format(parseISO(event.start_time), "eeee, dd MMMM", { locale: id })}\n⏰ ${format(parseISO(event.start_time), "HH.mm")} - ${format(parseISO(event.end_time), "HH.mm")}\n📍 ${event.location}\n📝 ${event.title}\n🔗 ${event.file_url || "-"}`;
+        // GANTI SEMUA format(...) DENGAN formatToWIB(...)
+        const text = `📢 *INFO KEGIATAN*\nProker: ${prokerName}\n📅 ${formatToWIB(event.start_time, "eeee, dd MMMM")}\n⏰ ${formatToWIB(event.start_time, "HH.mm")} - ${formatToWIB(event.end_time, "HH.mm")}\n📍 ${event.location}\n📝 ${event.title}\n🔗 ${event.file_url || "-"}`;
         navigator.clipboard.writeText(text); 
         alert("Teks berhasil disalin!");
     };
@@ -50,8 +51,9 @@ export default function DetailModal({ event, onClose, onDeleteSuccess, userProfi
             const deptName = PILLARS.find(p => p.id === deptId)?.name || "HMPSTI";
             const body = {
                 title: event.title, 
-                date: format(parseISO(event.start_time), "eeee, dd MMMM yyyy", { locale: id }),
-                time: `${format(parseISO(event.start_time), "HH.mm")} - ${format(parseISO(event.end_time), "HH.mm")} WIB`,
+                // UPDATE TIMEZONE DISINI
+                date: formatToWIB(event.start_time, "eeee, dd MMMM yyyy"),
+                time: `${formatToWIB(event.start_time, "HH.mm")} - ${formatToWIB(event.end_time, "HH.mm")} WIB`,
                 location: event.location, 
                 description: event.description || "-", 
                 type: event.activity_type,
@@ -112,7 +114,10 @@ export default function DetailModal({ event, onClose, onDeleteSuccess, userProfi
                  {activeTab === 'info' && (
                     <div className="space-y-3">
                         <p className="font-bold text-gray-400 text-xs">WAKTU & TEMPAT</p>
-                        <p className="text-sm md:text-base">{format(parseISO(event.start_time), "eeee, dd MMMM yyyy • HH.mm", {locale:id})} WIB</p>
+                        {/* UPDATE FORMAT TIMEZONE DI SINI */}
+                        <p className="text-sm md:text-base">
+                            {formatToWIB(event.start_time, "eeee, dd MMMM yyyy • HH.mm")} WIB
+                        </p>
                         <p className="font-bold text-sm md:text-base">{event.location}</p>
                         <div className="bg-gray-50 p-3 rounded text-sm mt-2 border border-gray-100 italic">"{event.description || "-"}"</div>
                     </div>
@@ -140,7 +145,7 @@ export default function DetailModal({ event, onClose, onDeleteSuccess, userProfi
                  )}
               </div>
 
-              {/* Footer Actions */}
+              {/* Footer */}
               <div className="p-3 md:p-4 border-t flex flex-col gap-2 bg-gray-50">
                  <div className="flex gap-2">
                     <button onClick={copyManual} className="px-3 border bg-white rounded-xl text-gray-500 hover:bg-gray-100 transition" title="Copy Manual">

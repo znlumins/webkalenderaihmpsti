@@ -3,6 +3,7 @@ import { useEffect, useState } from "react";
 import { supabase } from "../lib/supabaseClient"; 
 import { EventService } from "../services/EventService";
 import { EventData, Proker, UserProfile } from "../lib/types";
+import { formatForInput } from "../lib/dateHelper"; // <--- IMPORT HELPER
 
 // Components
 import Header from "../components/Header";
@@ -77,12 +78,8 @@ export default function Home() {
     try {
       const { data: { session }, error } = await supabase.auth.getSession();
       if (error) throw error;
-
       setSession(session);
-      
-      if (session) {
-        await fetchProfile(session.user.id);
-      }
+      if (session) await fetchProfile(session.user.id);
     } catch (error) {
       console.error("Session Error (Auto Logout):", error);
       await supabase.auth.signOut(); 
@@ -99,23 +96,25 @@ export default function Home() {
   };
 
   // --- HANDLERS ---
-
-  // 1. HANDLE KLIK TANGGAL KOSONG
   const handleDateClick = (day: Date) => {
-    // PERUBAHAN DISINI:
-    // Jika tidak ada session (bukan admin), return saja (DIAM / DO NOTHING).
-    // Jangan kasih alert.
+    // Read-only untuk public
     if(!session) return; 
     
-    const toLocal = (d: Date) => new Date(d.getTime()-(d.getTimezoneOffset()*60000)).toISOString().slice(0,16);
+    // SETUP JAM DEFAULT (09.00 - 11.00 WIB)
+    const startDate = new Date(day);
+    startDate.setHours(9, 0, 0, 0);
+
+    const endDate = new Date(day);
+    endDate.setHours(11, 0, 0, 0);
+
+    // GUNAKAN HELPER (Agar timezone Vercel tidak mengacaukan jam)
     setInitialFormDate({
-        start: toLocal(new Date(day.setHours(9,0))),
-        end: toLocal(new Date(day.setHours(11,0)))
+        start: formatForInput(startDate),
+        end: formatForInput(endDate)
     });
     setModalType('add_event');
   };
 
-  // 2. HANDLE KLIK EVENT (TETAP MUNCUL DETAIL BUAT PUBLIK)
   const handleEventClick = (ev: EventData) => {
     setSelectedEvent(ev);
     setModalType('detail');
