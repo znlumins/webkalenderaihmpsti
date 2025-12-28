@@ -18,6 +18,9 @@ export interface EventData {
     logistics: string;
     file_url?: string;
     prokers: Proker; // Relasi
+    pic?: string;
+    link_meeting?: string;
+    status?: string;
 }
 
 export interface UserProfile {

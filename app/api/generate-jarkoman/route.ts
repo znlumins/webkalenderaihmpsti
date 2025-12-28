@@ -1,81 +1,61 @@
 import Groq from "groq-sdk";
 import { NextResponse } from "next/server";
 
-const groq = new Groq({
-  apiKey: process.env.GROQ_API_KEY,
-});
+const groq = new Groq({ apiKey: process.env.GROQ_API_KEY });
 
 export async function POST(request: Request) {
   try {
-    const { title, date, time, location, description, type, proker, dept, logistics } = await request.json();
-
-    // Data Logistik (Barang Bawaan)
-    const items = logistics && logistics !== "-" ? logistics : "Menyesuaikan";
+    const body = await request.json();
+    const { 
+        title, proker, dept, type, date, time, 
+        location, pic, status, link_meeting, 
+        description, logistics 
+    } = body;
 
     const systemPrompt = `
-      Kamu adalah Sekretaris Organisasi. Tugasmu membuat Broadcast WhatsApp (Jarkoman) yang RAPI dan BERSIH.
-
-      ATURAN FORMATTING WHATSAPP (STRICT):
-      1. BOLD: Gunakan SATU BINTANG (*Teks*). JANGAN gunakan dua bintang (**Teks**).
-      2. ITALIC: Gunakan SATU UNDERSCORE (_Teks_).
-      3. LIST/POIN: Gunakan Angka (1.) atau Strip (-). DILARANG menggunakan bintang (*) untuk bullet point.
-      4. SPASI: Jangan ada spasi antara simbol formatting dan teks. (Benar: *Halo*, Salah: * Halo *).
+      Kamu adalah Sekretaris Humas HMPSTI. Tugasmu membuat Jarkoman WhatsApp yang estetik.
       
-      STRUKTUR JARKOMAN:
-      1. Judul Jarkoman (Bold & Uppercase) di dalam kurung siku.
-      2. Salam pembuka singkat.
-      3. Detail Acara (Gunakan emoji ikonik 📆 🕐 📍 sebagai bullet).
-      4. Note/Catatan (Italic).
-      5. Barang Bawaan (Jika ada, gunakan list angka).
-      6. Syarat/Info Penting (Bold).
-
-      CONTOH OUTPUT SEMPURNA (Tiru format ini):
-      
-      *[JARKOMAN RAPAT PLENO]*
-
-      Halo teman-teman *KOMINFO!*
-      Mau info nih terkait agenda Rapat Pleno 1.
-
-      📆 Tanggal: Senin, 12 Agustus 2024
-      🕐 Jam: 13.00 WIB
-      📍 Tempat: _Sekre Utama_
-      📍 Tikum: Depan Musholla
-
-      _note: Harap datang tepat waktu, materi padat._
-
-      *Barang bawaan yang wajib dibawa:*
-      1. Laptop
-      2. Kabel Roll
-      3. Uang Kas
-
-      ⚠️ *Penting:*
-      Wajib hadir full team dan lunas kas!
+      ATURAN FORMAT WA:
+      - Bold: *teks* (bintang satu)
+      - Italic: _teks_ (underscore satu)
+      - List: Gunakan angka (1.) atau emoji. DILARANG pakai bintang (*) untuk list.
+      - Tone: ${type === 'Hari H (Eksekusi)' ? 'Sangat Bersemangat' : 'Formal & Disiplin'}.
     `;
 
     const userMessage = `
-      Buatkan jarkoman bersih dengan data ini:
-      - Departemen: ${dept}
-      - Judul Acara: ${title}
-      - Waktu: ${date}, Jam ${time}
-      - Tempat: ${location}
-      - Note/Deskripsi: ${description}
-      - Barang Bawaan: ${items}
+      Buatkan jarkoman premium:
+      *[JARKOMAN - ${title.toUpperCase()}]*
+
+      Halo teman-teman *${dept}*!
+      
+      📌 *Proker:* ${proker}
+      📆 *Hari/Tgl:* ${date}
+      🕐 *Waktu:* ${time}
+      📍 *Tempat:* ${location}
+      👤 *PIC:* ${pic || 'Admin'}
+      ⚠️ *Status:* ${status}
+      ${link_meeting ? `🔗 *Link:* ${link_meeting}` : ''}
+
+      *Agenda:*
+      _${description || '-'}_
+
+      *Bawaan:*
+      ${logistics || 'Menyesuaikan'}
+
+      Terima kasih, Semangat!
     `;
 
     const completion = await groq.chat.completions.create({
       messages: [
         { role: "system", content: systemPrompt },
-        { role: "user", content: userMessage },
+        { role: "user", content: userMessage }
       ],
-      model: "llama-3.3-70b-versatile", 
-      temperature: 0.3, // Sangat rendah agar patuh aturan format
+      model: "llama-3.3-70b-versatile",
+      temperature: 0.2,
     });
 
-    const text = completion.choices[0]?.message?.content || "Gagal membuat teks.";
-
-    return NextResponse.json({ jarkoman: text });
-  } catch (error) {
-    console.error("Groq Error:", error);
-    return NextResponse.json({ error: "Gagal memanggil AI" }, { status: 500 });
+    return NextResponse.json({ jarkoman: completion.choices[0]?.message?.content });
+  } catch (error: any) {
+    return NextResponse.json({ error: error.message }, { status: 500 });
   }
 }
